@@ -1,0 +1,67 @@
+✅ 1. load-testing.txt
+# Load Testing Results (using `hey`)
+Command:
+hey -n 10000 -c 100 http://<ELB-DNS>
+
+Summary:
+  Total:        5.6592 secs
+  Slowest:      0.2510 secs
+  Fastest:      0.0365 secs
+  Average:      0.0523 secs
+  Requests/sec: 1767.0384
+
+Latency Distribution:
+  50% in 0.0430 secs
+  90% in 0.0824 secs
+  95% in 0.0888 secs
+  99% in 0.2416 secs
+
+Status Code Distribution:
+  [200] 10000 responses
+
+✅ 2. resource-usage-before.txt
+# Resource usage BEFORE migration (kubectl top nodes/pods)
+
+$ kubectl top nodes
+ip-192-168-8-237.ap-south-1.compute.internal  36m  516Mi
+ip-192-168-12-72.ap-south-1.compute.internal  21m  455Mi
+...
+(highest loaded: ip-192-168-8-237)
+
+$ kubectl top pods -A --sort-by=cpu
+kube-system   aws-node-jhf2s  5m  53Mi
+default       nginx-5869d7778c-vnmrc  1m  3Mi
+...
+(highest loaded pod: nginx-5869d7778c-vnmrc on ip-192-168-8-237)
+
+✅ 3. resource-usage-after.txt
+# Resource usage AFTER migration
+
+$ kubectl top nodes
+ip-192-168-49-114.ap-south-1.compute.internal  15m  466Mi
+ip-192-168-8-237.ap-south-1.compute.internal   22m  490Mi
+...
+(pod now running on ip-192-168-49-114)
+
+$ kubectl top pods -A --sort-by=cpu
+default  nginx-restored  1m  3Mi
+...
+
+✅ 4. migration-metrics.txt
+# Migration Timing and Overheads
+
+Checkpoint command:
+sudo criu dump -t <PID> --images-dir /tmp/checkpoint_dir --leave-running
+
+Checkpoint time: ~xx ms
+
+Restore command:
+kubectl apply -f nginx-migrated-pod.yaml
+
+Pod startup latency: ~yy ms
+
+Curl response before migration: ~132 ms
+Curl response after migration: ~145 ms
+
+Overall migration impact: ~dk ms additional overhead
+
