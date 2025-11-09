@@ -1,0 +1,66 @@
+✅ 1. nginx-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+✅ 2. nginx-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: nginx
+
+✅ 3. metrics-server.yaml (Official EKS Setup)
+# Extracted using:
+kubectl get deployment metrics-server -n kube-system -o yaml > metrics-server.yaml
+# Or download from:
+https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+✅ 4. nginx-migrated-pod.yaml (Checkpoint/Restore Example)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-restored
+  labels:
+    app: nginx-migration
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: ip-192-168-49-114.ap-south-1.compute.internal  # Update as needed
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+
+✅ 5. checkpoint-demo-notes.txt
+- Original Pod: nginx-5869d7778c-768b4
+- Highest loaded node: ip-192-168-8-237
+- Restored on new node: ip-192-168-49-114
+- CRIU version: 4.1.1
+- Metrics used: CPU, Memory (kubectl top)
+
